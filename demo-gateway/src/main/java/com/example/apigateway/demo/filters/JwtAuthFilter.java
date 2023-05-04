@@ -6,8 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.net.http.HttpResponse;
 
 @Component
 public class JwtAuthFilter  extends AbstractGatewayFilterFactory<JwtAuthFilter.Config>  {
@@ -32,12 +36,11 @@ public class JwtAuthFilter  extends AbstractGatewayFilterFactory<JwtAuthFilter.C
             System.out.println("filter invoked");
 
             if(routeValidator.isSecured.test(exchange.getRequest())){
-                if(exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION))
+                if(!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION))
                 {
+                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                    return exchange.getResponse().setComplete();
 
-                }
-                else {
-                    throw new RuntimeException("missing auth header");
                 }
 
                 String authheaders =exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
@@ -50,12 +53,13 @@ public class JwtAuthFilter  extends AbstractGatewayFilterFactory<JwtAuthFilter.C
                 }
                 try{
                     //rest call to auth service
-                    restTemplate.getForObject("http://localhost:8080/auth/validate?token="+authheaders,String.class);
-//                    jwtUtil.validateToken(authheaders);
+                    String  response= restTemplate.getForObject("http://localhost:8080/auth/validate?token="+authheaders,String.class);
+
+//                  jwtUtil.validateToken(authheaders);
                 }
                 catch (Exception e){
-//                    System.out.println("error"+e.getMessage());
-                    throw new RuntimeException("Un auth user");
+                   exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                   return exchange.getResponse().setComplete();
 
                 }
             }

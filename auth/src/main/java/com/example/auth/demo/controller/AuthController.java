@@ -4,6 +4,9 @@ import com.example.auth.demo.dto.AuthRequest;
 import com.example.auth.demo.entity.User;
 import com.example.auth.demo.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,13 +47,13 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public String validateToken(@RequestParam("token") String token) {
+    public ResponseEntity<String> validateToken(@RequestParam("token") String token) {
         try {
             authService.validateToken(token);
-            return "Token is valid";
+            return new ResponseEntity<String>("Welcome",HttpStatus.OK);
         } catch (Exception e)
         {
-            throw new RuntimeException("invalid token");
+           return new ResponseEntity<String>("Invalid auth token",HttpStatus.UNAUTHORIZED);
 
         }
 
